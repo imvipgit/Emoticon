@@ -217,6 +217,20 @@ class EmoticonGUI:
         )
         self.stop_button.pack(side=tk.LEFT, padx=10)
         
+        self.test_camera_button = tk.Button(
+            button_frame,
+            text="Test Camera",
+            command=self.test_camera,
+            font=('Arial', 12),
+            bg='#3498db',
+            fg='white',
+            relief=tk.RAISED,
+            bd=2,
+            padx=15,
+            pady=8
+        )
+        self.test_camera_button.pack(side=tk.LEFT, padx=10)
+        
         # Status bar
         self.status_label = tk.Label(
             main_frame,
@@ -259,20 +273,53 @@ class EmoticonGUI:
             self.status_label.config(text="Components initialized successfully")
             logger.info("All components initialized successfully")
             
+            # Show a test image in the video label
+            self.show_test_image()
+            
         except Exception as e:
             logger.error(f"Failed to initialize components: {e}")
             messagebox.showerror("Error", f"Failed to initialize components: {e}")
             self.status_label.config(text="Failed to initialize components")
     
+    def show_test_image(self):
+        """Show a test image in the video label"""
+        try:
+            # Create a test image
+            test_image = np.zeros((480, 640, 3), dtype=np.uint8)
+            
+            # Add some text to the test image
+            cv2.putText(test_image, "Camera Ready", (200, 240), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(test_image, "Click 'Start Detection' to begin", (150, 280), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 200), 2)
+            
+            # Convert to PIL and display
+            test_image_rgb = cv2.cvtColor(test_image, cv2.COLOR_BGR2RGB)
+            pil_image = Image.fromarray(test_image_rgb)
+            photo = ImageTk.PhotoImage(pil_image)
+            
+            self.video_label.configure(image=photo)
+            self.video_label.image = photo
+            
+        except Exception as e:
+            logger.error(f"Error showing test image: {e}")
+    
     def start_detection(self):
         """Start the emotion detection"""
         if not self.is_running:
             try:
+                # Try to start camera
                 self.camera_manager.start()
+                
+                # Test if camera is working
+                test_frame = self.camera_manager.get_frame()
+                if test_frame is None:
+                    raise Exception("Camera not accessible. Please check camera permissions.")
+                
                 self.is_running = True
                 self.start_button.config(state=tk.DISABLED)
                 self.stop_button.config(state=tk.NORMAL)
-                self.status_label.config(text="Detection started")
+                self.status_label.config(text="Detection started - Camera active")
                 
                 # Start the detection thread
                 self.detection_thread = threading.Thread(target=self.detection_loop, daemon=True)
@@ -280,7 +327,13 @@ class EmoticonGUI:
                 
             except Exception as e:
                 logger.error(f"Failed to start detection: {e}")
-                messagebox.showerror("Error", f"Failed to start detection: {e}")
+                messagebox.showerror("Camera Error", 
+                    f"Failed to start camera: {e}\n\n"
+                    "Please check:\n"
+                    "1. Camera permissions in System Preferences\n"
+                    "2. Camera is not being used by another application\n"
+                    "3. Camera is properly connected")
+                self.status_label.config(text="Camera error - check permissions")
     
     def stop_detection(self):
         """Stop the emotion detection"""
@@ -290,6 +343,56 @@ class EmoticonGUI:
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
             self.status_label.config(text="Detection stopped")
+    
+    def test_camera(self):
+        """Test camera functionality"""
+        try:
+            self.status_label.config(text="Testing camera...")
+            
+            # Try to start camera
+            self.camera_manager.start()
+            
+            # Get a test frame
+            test_frame = self.camera_manager.get_frame()
+            
+            if test_frame is not None:
+                # Display the test frame
+                frame_rgb = cv2.cvtColor(test_frame, cv2.COLOR_BGR2RGB)
+                
+                # Resize for display
+                height, width = frame_rgb.shape[:2]
+                max_width = 640
+                max_height = 480
+                
+                if width > max_width or height > max_height:
+                    scale = min(max_width / width, max_height / height)
+                    new_width = int(width * scale)
+                    new_height = int(height * scale)
+                    frame_rgb = cv2.resize(frame_rgb, (new_width, new_height))
+                
+                # Convert to PIL and display
+                pil_image = Image.fromarray(frame_rgb)
+                photo = ImageTk.PhotoImage(pil_image)
+                
+                self.video_label.configure(image=photo)
+                self.video_label.image = photo
+                
+                self.status_label.config(text="Camera test successful!")
+                messagebox.showinfo("Camera Test", "Camera is working correctly!")
+                
+            else:
+                raise Exception("No frame received from camera")
+                
+            # Stop camera after test
+            self.camera_manager.stop()
+            
+        except Exception as e:
+            logger.error(f"Camera test failed: {e}")
+            messagebox.showerror("Camera Test Failed", 
+                f"Camera test failed: {e}\n\n"
+                "Please check camera permissions in System Preferences > Security & Privacy > Privacy > Camera")
+            self.status_label.config(text="Camera test failed")
+            self.show_test_image()
     
     def detection_loop(self):
         """Main detection loop"""
