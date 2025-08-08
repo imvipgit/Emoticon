@@ -1,0 +1,30 @@
+camera:
+  device: 0                    # Camera device index (0 for USB, /dev/video0 for CSI)
+  width: 640                   # Frame width
+  height: 480                  # Frame height
+  fps: 30                      # Frames per second
+  codec: "MJPG"               # Video codec (MJPG for USB, H264 for CSI)
+  buffer_size: 1              # Buffer size for frame capture
+  auto_exposure: true         # Enable auto exposure
+  auto_focus: true            # Enable auto focus (if supported)
+  
+  # Jetson specific settings
+  gstreamer_pipeline: "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=640, height=480, format=NV12, framerate=30/1 ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink"
+  
+  # USB camera fallback
+  usb_pipeline: "v4l2src device=/dev/video0 ! video/x-raw, width=640, height=480, framerate=30/1 ! videoconvert ! video/x-raw, format=BGR ! appsink"
+  
+  # CSI camera settings
+  csi:
+    sensor_id: 0
+    width: 1920
+    height: 1080
+    fps: 30
+    flip_method: 0            # 0=none, 2=horizontal, 4=vertical, 6=both
+  
+  # Performance settings
+  performance:
+    enable_gpu_acceleration: true
+    use_cuda: true
+    batch_size: 1
+    num_workers: 2
