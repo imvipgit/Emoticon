@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoticon - Facial Expression Recognition</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-online {
+            background: #28a745;
+        }
+        
+        .status-offline {
+            background: #dc3545;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .card h3 {
+            margin: 0 0 20px 0;
+            color: #495057;
+            font-size: 1.3em;
+        }
+        
+        .emotion-display {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .emotion-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+        
+        .emotion-label {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+        
+        .confidence-text {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .history-section {
+            margin-top: 30px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .history-emotion {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .history-time {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 0 10px;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>😊 Emoticon</h1>
+            <p>Real-time Facial Expression Recognition</p>
+        </div>
+        
+        <div class="content">
+            <div class="status-bar">
+                <div>
+                    <span class="status-indicator status-online" id="status-indicator"></span>
+                    <span id="status-text">System Online</span>
+                </div>
+                <div>
+                    <span id="fps-display">FPS: 0</span>
+                </div>
+            </div>
+            
+            <div class="main-grid">
+                <div class="card">
+                    <h3>Current Emotion</h3>
+                    <div class="emotion-display">
+                        <div class="emotion-icon" id="emotion-icon">😐</div>
+                        <div class="emotion-label" id="emotion-label">Neutral</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidence-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="confidence-text" id="confidence-text">Confidence: 0%</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>System Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="frame-count">0</div>
+                            <div class="stat-label">Frames Processed</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="detection-count">0</div>
+                            <div class="stat-label">Faces Detected</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="uptime">0s</div>
+                            <div class="stat-label">Uptime</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="history-section">
+                <h3>Recent Emotions</h3>
+                <div id="emotion-history">
+                    <div class="history-item">
+                        <span class="history-emotion">😐 Neutral</span>
+                        <span class="history-time">Just now</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn" onclick="clearHistory()">Clear History</button>
+                <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+        
+        // Emotion icons mapping
+        const emotionIcons = {
+            'happy': '😊',
+            'sad': '😢',
+            'angry': '😠',
+            'fear': '😨',
+            'surprise': '😲',
+            'disgust': '🤢',
+            'neutral': '😐'
+        };
+        
+        // Update status
+        function updateStatus(online) {
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+            
+            if (online) {
+                indicator.className = 'status-indicator status-online';
+                text.textContent = 'System Online';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'System Offline';
+            }
+        }
+        
+        // Update emotion display
+        function updateEmotion(emotion, confidence) {
+            const icon = document.getElementById('emotion-icon');
+            const label = document.getElementById('emotion-label');
+            const fill = document.getElementById('confidence-fill');
+            const text = document.getElementById('confidence-text');
+            
+            icon.textContent = emotionIcons[emotion] || '😐';
+            label.textContent = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+            fill.style.width = confidence + '%';
+            text.textContent = `Confidence: ${confidence.toFixed(1)}%`;
+        }
+        
+        // Update statistics
+        function updateStats(data) {
+            document.getElementById('frame-count').textContent = data.frame_count || 0;
+            document.getElementById('detection-count').textContent = data.emotions ? data.emotions.length : 0;
+            document.getElementById('fps-display').textContent = `FPS: ${data.fps || 0}`;
+        }
+        
+        // Update emotion history
+        function updateHistory(history) {
+            const container = document.getElementById('emotion-history');
+            container.innerHTML = '';
+            
+            history.slice(0, 10).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <span class="history-emotion">${emotionIcons[item.emotion]} ${item.emotion.charAt(0).toUpperCase() + item.emotion.slice(1)}</span>
+                    <span class="history-time">${new Date(item.timestamp * 1000).toLocaleTimeString()}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        // Socket event handlers
+        socket.on('connect', () => {
+            updateStatus(true);
+            console.log('Connected to server');
+        });
+        
+        socket.on('disconnect', () => {
+            updateStatus(false);
+            console.log('Disconnected from server');
+        });
+        
+        socket.on('emotion_update', (data) => {
+            if (data.emotions && data.emotions.length > 0) {
+                const emotion = data.emotions[0];
+                updateEmotion(emotion.emotion, emotion.confidence * 100);
+            }
+            updateStats(data);
+        });
+        
+        // API functions
+        function clearHistory() {
+            fetch('/api/clear_history', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('History cleared');
+                    updateHistory([]);
+                })
+                .catch(error => console.error('Error clearing history:', error));
+        }
+        
+        function refreshData() {
+            fetch('/api/emotion')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.emotions && data.emotions.length > 0) {
+                        const emotion = data.emotions[0];
+                        updateEmotion(emotion.emotion, emotion.confidence * 100);
+                    }
+                    updateStats(data);
+                })
+                .catch(error => console.error('Error refreshing data:', error));
+        }
+        
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshData();
+            
+            // Update uptime every second
+            setInterval(() => {
+                const uptime = Math.floor((Date.now() - performance.timing.navigationStart) / 1000);
+                document.getElementById('uptime').textContent = uptime + 's';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

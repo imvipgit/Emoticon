@@ -25,7 +25,7 @@ setup(
     name="emoticon",
     version="1.0.0",
     author="Vipul Sindha",
-    author_email="vipul.sindha@example.com",
+    author_email="vipul.sindha@gmail.com",
     description="Real-time facial expression recognition for NVIDIA Jetson hardware",
     long_description=long_description,
     long_description_content_type="text/markdown",
