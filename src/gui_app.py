@@ -256,7 +256,23 @@ class EmoticonGUI:
     def initialize_components(self):
         """Initialize the emotion detection components"""
         try:
-            config_dir = Path(__file__).parent.parent / "config"
+            # Get the correct config directory path
+            current_file = Path(__file__)
+            config_dir = current_file.parent.parent / "config"
+            
+            # Alternative: use absolute path from current working directory
+            if not config_dir.exists():
+                config_dir = Path.cwd() / "config"
+            
+            logger.info(f"Config directory: {config_dir}")
+            logger.info(f"Camera config path: {config_dir / 'camera_config.yaml'}")
+            logger.info(f"Model config path: {config_dir / 'model_config.yaml'}")
+            
+            # Check if config files exist
+            if not (config_dir / "camera_config.yaml").exists():
+                raise FileNotFoundError(f"Camera config not found: {config_dir / 'camera_config.yaml'}")
+            if not (config_dir / "model_config.yaml").exists():
+                raise FileNotFoundError(f"Model config not found: {config_dir / 'model_config.yaml'}")
             
             # Initialize camera manager
             self.camera_manager = CameraManager(config_dir / "camera_config.yaml")
@@ -399,17 +415,23 @@ class EmoticonGUI:
         frame_count = 0
         start_time = time.time()
         
+        logger.info("Detection loop started")
+        
         while self.is_running:
             try:
                 # Get frame from camera
                 frame = self.camera_manager.get_frame()
                 if frame is None:
+                    logger.warning("No frame received from camera")
+                    time.sleep(0.1)
                     continue
                 
                 frame_count += 1
+                logger.debug(f"Processing frame {frame_count}, shape: {frame.shape}")
                 
                 # Detect faces
                 faces = self.face_detector.detect_faces(frame)
+                logger.debug(f"Detected {len(faces)} faces")
                 
                 # Process each detected face
                 emotions = []
@@ -434,13 +456,19 @@ class EmoticonGUI:
                 # Update GUI with results
                 self.root.after(0, self.update_gui, frame, emotions, frame_count, start_time)
                 
+                if frame_count % 30 == 0:  # Log every 30 frames
+                    logger.info(f"Processed {frame_count} frames, {len(emotions)} emotions detected")
+                
             except Exception as e:
                 logger.error(f"Error in detection loop: {e}")
+                time.sleep(0.1)
                 continue
     
     def update_gui(self, frame, emotions, frame_count, start_time):
         """Update the GUI with detection results"""
         try:
+            logger.debug(f"Updating GUI with frame {frame_count}, {len(emotions)} emotions")
+            
             # Update video frame
             if frame is not None:
                 # Convert BGR to RGB
@@ -474,6 +502,8 @@ class EmoticonGUI:
                 # Update video label
                 self.video_label.configure(image=photo)
                 self.video_label.image = photo  # Keep a reference
+                
+                logger.debug(f"Updated video frame: {frame_rgb.shape}")
                 
                 # Update emotion display
                 if emotions:

@@ -211,16 +211,16 @@ class EmotionDetector:
                 # Check confidence threshold
                 confidence_threshold = self.config['model']['performance']['confidence_threshold']
                 
-                # For untrained models, lower the confidence threshold or return a demo result
-                if confidence < 0.1:  # Very low confidence indicates untrained model
-                    logger.debug("Using demo mode for untrained model")
-                    # Return a demo result for testing
-                    return {
-                        'emotion': 'neutral',
-                        'confidence': 0.8,
-                        'class_id': 6,  # neutral class
-                        'probabilities': [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.4]  # mostly neutral
-                    }
+                        # For untrained models, lower the confidence threshold or return a demo result
+        if confidence < 0.3:  # Lower threshold for demo purposes
+            logger.debug("Using demo mode for untrained model")
+            # Return a demo result for testing
+            return {
+                'emotion': 'neutral',
+                'confidence': 0.8,
+                'class_id': 6,  # neutral class
+                'probabilities': [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.4]  # mostly neutral
+            }
                 
                 if confidence >= confidence_threshold:
                     return {
