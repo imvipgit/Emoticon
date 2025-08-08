@@ -144,6 +144,32 @@ class WebServer:
                 logger.error(f"Error encoding frame: {e}")
                 return jsonify({'error': 'Failed to encode frame'})
         
+        @self.app.route('/api/camera-data')
+        def get_camera_data():
+            """Get camera data including face detection boxes"""
+            try:
+                data = {
+                    'timestamp': time.time(),
+                    'fps': self.current_results.get('fps', 0),
+                    'frame_count': self.current_results.get('frame_count', 0)
+                }
+                
+                # Add face detection data
+                if 'emotions' in self.current_results and self.current_results['emotions']:
+                    data['faces'] = []
+                    for emotion in self.current_results['emotions']:
+                        if 'bbox' in emotion:
+                            data['faces'].append({
+                                'bbox': emotion['bbox'],
+                                'emotion': emotion['emotion'],
+                                'confidence': emotion['confidence']
+                            })
+                
+                return jsonify(data)
+            except Exception as e:
+                logger.error(f"Error getting camera data: {e}")
+                return jsonify({'error': 'Failed to get camera data'})
+        
         # WebSocket events
         @self.socketio.on('connect')
         def handle_connect():
