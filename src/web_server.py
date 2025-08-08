@@ -223,13 +223,33 @@ class WebServer:
     def update_results(self, results: Dict[str, Any]):
         """Update current results and broadcast to clients"""
         try:
+            # Convert numpy arrays to lists for JSON serialization
+            processed_results = {}
+            for key, value in results.items():
+                if isinstance(value, np.ndarray):
+                    processed_results[key] = value.tolist()
+                elif key == 'emotions' and value:
+                    # Process emotions to ensure JSON serializable
+                    processed_emotions = []
+                    for emotion in value:
+                        processed_emotion = {}
+                        for k, v in emotion.items():
+                            if isinstance(v, np.ndarray):
+                                processed_emotion[k] = v.tolist()
+                            else:
+                                processed_emotion[k] = v
+                        processed_emotions.append(processed_emotion)
+                    processed_results[key] = processed_emotions
+                else:
+                    processed_results[key] = value
+            
             # Update current results
-            self.current_results.update(results)
+            self.current_results.update(processed_results)
             self.current_results['timestamp'] = time.time()
             
             # Add to history if emotions detected
-            if results.get('emotions'):
-                for emotion_data in results['emotions']:
+            if processed_results.get('emotions'):
+                for emotion_data in processed_results['emotions']:
                     history_entry = {
                         'emotion': emotion_data['emotion'],
                         'confidence': emotion_data['confidence'],
